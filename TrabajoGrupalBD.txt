@@ -1,0 +1,18 @@
+================================================================================
+                         TRABAJO GRUPAL - BASE DE DATOS
+================================================================================
+
+INFORMACIÓN GENERAL:
+───────────────────────────────────────────────────────────────────────────────
+Nombres del grupo:           [Cristian Ango, Matias Morales, Luis Miranda, ]
+Fecha de entrega:            [07/03/2026]
+Asignatura:                  Base de Datos
+Profesor:                    [Nombre del profesor]
+Nivel:                       [4to Semestre]
+
+OBJETIVO DEL TRABAJO:
+───────────────────────────────────────────────────────────────────────────────
+[Comprender y aplicar los fundamentos de Base de Datos]
+
+═════════════════════════════════════════════════════════════════════════════════
+
