@@ -30,3 +30,30 @@ Laboratorio CTT             | Aula que esta en la facultad para realizar prácti
 Matriculado/No matriculado  | Estado de la matricula
 2. Listar entidades y atributos del caso (mín. 8 entidades).
 3. Definir 5 reglas de negocio (ej.: estado del equipo, plazo de devolución).
+
+
+------------------------------Validación de Identidad: -------------------------
+
+Todo registro de Estudiante o Docente debe estar vinculado obligatoriamente a un número de
+Cédula ecuatoriana válido de 10 dígitos para evitar duplicados en el sistema.
+
+-------------------------Prerrequisitos de Nivel: ----------------------------------
+
+Un estudiante no puede matricularse en materias de Quinto nivel si no ha aprobado la totalidad 
+de los créditos correspondientes al cuarto nivel de la carrera de Ingeniería en Software.
+
+--------------------Cupo de Laboratorio: -------------------------------------------
+
+El número de estudiantes asignados a una clase práctica en el Laboratorio CTT no puede exceder 
+la capacidad física de estaciones de trabajo (computadoras) disponibles en dicho espacio.
+
+-------------------Vigencia del Período: ------------------------------
+
+Las calificaciones (como el 8.50) solo pueden ser ingresadas al sistema por el Docente responsable 
+durante las fechas habilitadas dentro del Período Académico 2025-2026.
+
+-----------------Relación de Modalidad:-----------------------------
+
+Si una asignatura está configurada como Presencial, el sistema debe bloquear el registro de 
+asistencia si el aula o laboratorio asignado no pertenece a los bloques físicos de la FISEI (Campus Huachi).
+
