@@ -28,6 +28,13 @@ FISEI                       | Facultad de Ingeniería en Sistemas, Electrónica 
 Laboratorio CTT             | Aula que esta en la facultad para realizar prácticas.
 8.50                        | Nota Final del estudiante
 Matriculado/No matriculado  | Estado de la matricula
+Ingeniería en Software      | Carrera de la facultad
+2025-2026                   | Periodo académico.
+Quinto                      | Nivel del semestre que cursa el alumno
+3                           | Créditos de la materia o asignatura
+Presencial                  | Modalidad de estudio académico
+1700157100                  | Cedula del profesor responsable de la materia
+----------------------------|-----------------------------------------------------
 2. Listar entidades y atributos del caso (mín. 8 entidades).
 3. Definir 5 reglas de negocio (ej.: estado del equipo, plazo de devolución).
 
