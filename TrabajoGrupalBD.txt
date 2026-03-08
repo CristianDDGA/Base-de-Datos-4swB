@@ -21,15 +21,6 @@ Actividad:
 
 
 1. Identificar: datos vs información (10 ejemplos del contexto UTA).
-|-------------------------------------------------------------------------------------------------------|
-|Dato                        | Información                                                              |
-|----------------------------|--------------------------------------------------------------------------|
-|1550008900                  | Número de cédula del estudiante, para identificarlo                      |
-|FISEI                       | Facultad de Ingeniería en Sistemas, Electrónica e Industrial de la UTA   |
-|Laboratorio CTT             | Aula que esta en la facultad para realizar prácticas.                    |
-|8.50                        | Nota Final del estudiante                                                |
-|Matriculado/No matriculado  | Estado de la matricula                                                   |
---------------------------------------------------------------------------------------------------------|
 2. Listar entidades y atributos del caso (mín. 8 entidades).
 3. Definir 5 reglas de negocio (ej.: estado del equipo, plazo de devolución).
 
