@@ -86,6 +86,7 @@ Descarga los cambios más recientes del repositorio remoto.
 - Cristian Ango
 - Matias Morales
 - Luis Miranda
+- Melany Cevallos
 
 ---
 
