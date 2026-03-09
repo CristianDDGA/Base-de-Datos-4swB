@@ -1,0 +1,9 @@
+2. Listar entidades y atributos del caso (mín. 8 entidades).
+•	Estudiante: Cédula, Nombre, Nivel (Quinto), Carrera.
+•	Docente: Cédula, Nombre, Título.
+•	Facultad: Nombre (FISEI), Ubicación.
+•	Materia: Nombre (ej. Bases de Datos), Créditos (3).
+•	Laboratorio: Nombre (CTT), Bloque, Capacidad.
+•	Matrícula: Estado (Matriculado), Fecha, Modalidad (Presencial).
+•	Calificación: Nota (8.50), Parcial, Tipo de actividad.
+•	Período Académico: Código (2025-2026), Fecha inicio, Fecha fin.
