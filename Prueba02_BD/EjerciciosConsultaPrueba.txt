@@ -1,0 +1,378 @@
+CREATE USER Hotel IDENTIFIED BY host123;
+GRANT CONNECT, RESOURCE, UNLIMITED TABLESPACE TO Hotel;
+
+connect HOSPEDAJE/EJECUTIVO123;
+
+CREACIÓN DE TABLAS
+
+CREATE TABLE EMPRESAS (
+    ID_EMP VARCHAR(10) PRIMARY KEY,
+    NOM_EMP VARCHAR(50) NOT NULL,
+    CIU_EMP VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE HOTELES (
+    ID_HOT VARCHAR(10) PRIMARY KEY,
+    NOM_HOT VARCHAR(50) NOT NULL,
+    CIU_HOT VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE RECEPCIONISTAS (
+    ID_REC VARCHAR(10) PRIMARY KEY,
+    NOM_REC VARCHAR(50) NOT NULL,
+    APE_REC VARCHAR(50) NOT NULL,
+    ID_HOT_REC VARCHAR(10) NOT NULL REFERENCES HOTELES(ID_HOT)
+);
+
+CREATE TABLE HABITACIONES (
+    ID_HAB VARCHAR(10) PRIMARY KEY,
+    COD_CUARTO VARCHAR(10) NOT NULL,
+    TIP_HAB VARCHAR(20) NOT NULL,
+    COS_BASE NUMBER NOT NULL,
+    ID_HOT_HAB VARCHAR(10) NOT NULL REFERENCES HOTELES(ID_HOT)
+);
+
+CREATE TABLE EJECUTIVOS (
+    ID_EJE VARCHAR(10) PRIMARY KEY,
+    CED_EJE VARCHAR(10) UNIQUE NOT NULL,
+    NOM_EJE VARCHAR(50) NOT NULL,
+    APE_EJE VARCHAR(50) NOT NULL,
+    SUE_EJE NUMBER NOT NULL,
+    ID_EMP_EJE VARCHAR(10) NOT NULL REFERENCES EMPRESAS(ID_EMP),
+    ID_SUP_EJE VARCHAR(10) REFERENCES EJECUTIVOS(ID_EJE)
+);
+
+CREATE TABLE HOSPEDAJES (
+    ID_HOS VARCHAR(10) PRIMARY KEY,
+    FEC_ING DATE NOT NULL,
+    FEC_SAL DATE NOT NULL,
+    COS_APL NUMBER NOT NULL,
+    ID_EJE_HOS VARCHAR(10) NOT NULL REFERENCES EJECUTIVOS(ID_EJE),
+    ID_HAB_HOS VARCHAR(10) NOT NULL REFERENCES HABITACIONES(ID_HAB),
+    ID_REC_HOS VARCHAR(10) NOT NULL REFERENCES RECEPCIONISTAS(ID_REC)
+);
+
+CREATE TABLE NOVEDADES (
+    ID_NOV VARCHAR(10) PRIMARY KEY,
+    DES_NOV VARCHAR(200) NOT NULL,
+    FEC_REP DATE NOT NULL,
+    ID_HOS_NOV VARCHAR(10) NOT NULL REFERENCES HOSPEDAJES(ID_HOS)
+);
+
+
+-- =======================================================================
+-- 1. EMPRESAS (Mínimo 3)
+-- =======================================================================
+INSERT INTO EMPRESAS (ID_EMP, NOM_EMP, CIU_EMP) VALUES ('EMP-01', 'PETROECUADOR', 'Quito');
+INSERT INTO EMPRESAS (ID_EMP, NOM_EMP, CIU_EMP) VALUES ('EMP-02', 'CNT', 'Guayaquil');
+INSERT INTO EMPRESAS (ID_EMP, NOM_EMP, CIU_EMP) VALUES ('EMP-03', 'IESS', 'Cuenca');
+
+-- =======================================================================
+-- 2. HOTELES (Mínimo 3)
+-- =======================================================================
+INSERT INTO HOTELES (ID_HOT, NOM_HOT, CIU_HOT) VALUES ('HOT-01', 'COLON', 'Quito');
+INSERT INTO HOTELES (ID_HOT, NOM_HOT, CIU_HOT) VALUES ('HOT-02', 'MARRIOT', 'Guayaquil');
+INSERT INTO HOTELES (ID_HOT, NOM_HOT, CIU_HOT) VALUES ('HOT-03', 'SHERATON', 'Cuenca');
+
+-- =======================================================================
+-- 3. RECEPCIONISTAS (Mínimo 6)
+-- =======================================================================
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-01', 'Juan', 'Perez', 'HOT-01');
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-02', 'Ana', 'Gomez', 'HOT-01');
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-03', 'Luis', 'Silva', 'HOT-02');
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-04', 'Marta', 'Ruiz', 'HOT-02');
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-05', 'Pedro', 'Soto', 'HOT-03');
+INSERT INTO RECEPCIONISTAS (ID_REC, NOM_REC, APE_REC, ID_HOT_REC) VALUES ('REC-06', 'Elena', 'Vera', 'HOT-03');
+
+-- =======================================================================
+-- 4. HABITACIONES (Mínimo 10)
+-- Nota: El HOTEL COLON tiene más habitaciones para subir el promedio (Consulta 12)
+-- =======================================================================
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-01', '101C', 'Doble', 80.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-02', '102C', 'Suite', 150.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-03', '103C', 'Doble', 80.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-04', '104C', 'Simple', 50.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-05', '105C', 'Simple', 50.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-06', '106C', 'Simple', 50.00, 'HOT-01');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-07', '201M', 'Doble', 90.00, 'HOT-02');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-08', '202M', 'Suite', 180.00, 'HOT-02');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-09', '301S', 'Doble', 75.00, 'HOT-03');
+INSERT INTO HABITACIONES (ID_HAB, COD_CUARTO, TIP_HAB, COS_BASE, ID_HOT_HAB) VALUES ('HAB-10', '302S', 'Simple', 45.00, 'HOT-03');
+
+-- =======================================================================
+-- 5. EJECUTIVOS (Mínimo 8, insertamos 9 para justificar jerarquías)
+-- Importante: Primero los jefes (NULL), luego los subordinados apuntando al jefe
+-- =======================================================================
+-- JEFES (ID_SUP_EJE es nulo)
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-01', '111111', 'Carlos', 'JefePetro', 4000.00, 'EMP-01', NULL);
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-02', '222222', 'Maria', 'JefeCNT', 3500.00, 'EMP-02', NULL);
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-03', '1810', 'Roberto', 'JefeIESS', 2500.00, 'EMP-03', NULL);
+
+-- SUBORDINADOS
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-04', '333333', 'Sub1', 'Petro', 1200.00, 'EMP-01', 'EJE-01');
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-05', '444444', 'Sub2', 'Petro', 1200.00, 'EMP-01', 'EJE-01');
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-06', '555555', 'Sub3', 'Petro', 1200.00, 'EMP-01', 'EJE-01');
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-07', '666666', 'Sub1', 'CNT', 1000.00, 'EMP-02', 'EJE-02');
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-08', '777777', 'Sub1', 'IESS', 900.00, 'EMP-03', 'EJE-03');
+INSERT INTO EJECUTIVOS (ID_EJE, CED_EJE, NOM_EJE, APE_EJE, SUE_EJE, ID_EMP_EJE, ID_SUP_EJE) VALUES ('EJE-09', '888888', 'Sub2', 'IESS', 950.00, 'EMP-03', 'EJE-03');
+
+-- =======================================================================
+-- 6. HOSPEDAJES (Mínimo 10)
+-- =======================================================================
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-01', TO_DATE('2026-03-10', 'YYYY-MM-DD'), TO_DATE('2026-03-15', 'YYYY-MM-DD'), 400.00, 'EJE-04', 'HAB-04', 'REC-01'); 
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-02', TO_DATE('2026-04-01', 'YYYY-MM-DD'), TO_DATE('2026-04-05', 'YYYY-MM-DD'), 950.00, 'EJE-01', 'HAB-02', 'REC-01');
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-03', TO_DATE('2026-05-10', 'YYYY-MM-DD'), TO_DATE('2026-05-12', 'YYYY-MM-DD'), 360.00, 'EJE-02', 'HAB-08', 'REC-03');
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-04', TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2026-06-03', 'YYYY-MM-DD'), 160.00, 'EJE-05', 'HAB-01', 'REC-02');
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-05', TO_DATE('2026-07-01', 'YYYY-MM-DD'), TO_DATE('2026-07-03', 'YYYY-MM-DD'), 160.00, 'EJE-06', 'HAB-03', 'REC-02'); 
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-06', TO_DATE('2026-08-01', 'YYYY-MM-DD'), TO_DATE('2026-08-02', 'YYYY-MM-DD'), 80.00, 'EJE-08', 'HAB-07', 'REC-04'); 
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-07', TO_DATE('2026-09-01', 'YYYY-MM-DD'), TO_DATE('2026-09-05', 'YYYY-MM-DD'), 250.00, 'EJE-07', 'HAB-05', 'REC-01');
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-08', TO_DATE('2026-09-10', 'YYYY-MM-DD'), TO_DATE('2026-09-12', 'YYYY-MM-DD'), 100.00, 'EJE-09', 'HAB-10', 'REC-05');
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-09', TO_DATE('2026-10-01', 'YYYY-MM-DD'), TO_DATE('2026-10-02', 'YYYY-MM-DD'), 50.00, 'EJE-03', 'HAB-06', 'REC-02');
+
+INSERT INTO HOSPEDAJES (ID_HOS, FEC_ING, FEC_SAL, COS_APL, ID_EJE_HOS, ID_HAB_HOS, ID_REC_HOS) 
+VALUES ('HOS-10', TO_DATE('2026-11-01', 'YYYY-MM-DD'), TO_DATE('2026-11-03', 'YYYY-MM-DD'), 150.00, 'EJE-04', 'HAB-04', 'REC-01');
+
+-- =======================================================================
+-- 7. NOVEDADES (Mínimo 10)
+-- =======================================================================
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) 
+VALUES ('NOV-01', 'Se encontraron daños en el minibar', TO_DATE('2026-05-12', 'YYYY-MM-DD'), 'HOS-03'); -- Novedad requerida por Consulta 9
+
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-02', 'Toallas faltantes', TO_DATE('2026-03-15', 'YYYY-MM-DD'), 'HOS-01');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-03', 'Ruido en la madrugada', TO_DATE('2026-04-02', 'YYYY-MM-DD'), 'HOS-02');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-04', 'Control remoto sin pilas', TO_DATE('2026-06-02', 'YYYY-MM-DD'), 'HOS-04');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-05', 'Luz fundida en el baño', TO_DATE('2026-07-02', 'YYYY-MM-DD'), 'HOS-05');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-06', 'Huésped pidió cobijas extra', TO_DATE('2026-08-01', 'YYYY-MM-DD'), 'HOS-06');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-07', 'Mancha en la alfombra', TO_DATE('2026-09-04', 'YYYY-MM-DD'), 'HOS-07');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-08', 'Retraso en el check-out', TO_DATE('2026-09-12', 'YYYY-MM-DD'), 'HOS-08');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-09', 'Llave magnética desprogramada', TO_DATE('2026-10-01', 'YYYY-MM-DD'), 'HOS-09');
+INSERT INTO NOVEDADES (ID_NOV, DES_NOV, FEC_REP, ID_HOS_NOV) VALUES ('NOV-10', 'Olvido de cargador de celular', TO_DATE('2026-11-03', 'YYYY-MM-DD'), 'HOS-10');
+
+
+
+
+Consultas 
+
+
+1-----------------
+
+SELECT E.NOM_EJE, E.APE_EJE
+FROM EJECUTIVOS E
+JOIN EMPRESAS EMP ON E.ID_EMP_EJE = EMP.ID_EMP
+WHERE EMP.NOM_EMP = 'PETROECUADOR'
+AND E.ID_EJE IN (
+    SELECT ID_SUP_EJE
+    FROM EJECUTIVOS
+    WHERE ID_SUP_EJE IS NOT NULL
+    GROUP BY ID_SUP_EJE
+    HAVING COUNT(*) = (
+        SELECT MAX(COUNT(*))
+        FROM EJECUTIVOS
+        WHERE ID_SUP_EJE IS NOT NULL
+        GROUP BY ID_SUP_EJE
+    )
+)
+AND EXISTS (
+    SELECT * FROM EJECUTIVOS SUB
+    JOIN HOSPEDAJES H ON SUB.ID_EJE = H.ID_EJE_HOS
+    JOIN HABITACIONES HAB ON H.ID_HAB_HOS = HAB.ID_HAB
+    JOIN HOTELES HOT ON HAB.ID_HOT_HAB = HOT.ID_HOT
+    WHERE SUB.ID_SUP_EJE = E.ID_EJE
+    AND HOT.NOM_HOT = 'COLON'
+    AND EXTRACT(MONTH FROM H.FEC_ING) = 3 
+    AND EXTRACT(YEAR FROM H.FEC_ING) = 2026
+);
+2------------------------------------------
+
+
+
+SELECT R.*
+FROM RECEPCIONISTAS R
+JOIN HOSPEDAJES H ON R.ID_REC = H.ID_REC_HOS
+WHERE H.COS_APL = (
+    SELECT MAX(H2.COS_APL)
+    FROM HOSPEDAJES H2
+    JOIN EJECUTIVOS E ON H2.ID_EJE_HOS = E.ID_EJE
+    WHERE E.SUE_EJE > (
+        SELECT AVG(E3.SUE_EJE)
+        FROM EJECUTIVOS E3
+        WHERE E3.ID_EMP_EJE = E.ID_EMP_EJE
+    )
+);
+
+3--------------------------------------------
+
+SELECT DISTINCT HOT.NOM_HOT
+FROM HOTELES HOT
+JOIN HABITACIONES HAB ON HOT.ID_HOT = HAB.ID_HOT_HAB
+JOIN HOSPEDAJES H ON HAB.ID_HAB = H.ID_HAB_HOS
+WHERE H.ID_EJE_HOS IN (
+    SELECT E.ID_EJE
+    FROM EJECUTIVOS E
+    JOIN EMPRESAS EMP ON E.ID_EMP_EJE = EMP.ID_EMP
+    WHERE EMP.NOM_EMP = 'CNT'
+    AND E.SUE_EJE = (
+        SELECT MAX(E2.SUE_EJE)
+        FROM EJECUTIVOS E2
+        JOIN EMPRESAS EMP2 ON E2.ID_EMP_EJE = EMP2.ID_EMP
+        WHERE EMP2.NOM_EMP = 'CNT'
+    )
+)
+AND EXISTS (
+    SELECT *
+    FROM NOVEDADES N
+    WHERE N.ID_HOS_NOV = H.ID_HOS
+    AND (UPPER(N.DES_NOV) LIKE '%MINIBAR%' OR UPPER(N.DES_NOV) LIKE '%DAÑOS%')
+);
+4------------------------------------------------------------------------------
+SELECT DISTINCT E.NOM_EJE, E.APE_EJE, E.SUE_EJE
+FROM EJECUTIVOS E
+JOIN HOSPEDAJES H ON E.ID_EJE = H.ID_EJE_HOS
+JOIN HABITACIONES HAB ON H.ID_HAB_HOS = HAB.ID_HAB
+WHERE UPPER(HAB.TIP_HAB) = 'SUITE'
+AND E.SUE_EJE > ALL (
+    SELECT SUB.SUE_EJE
+    FROM EJECUTIVOS SUB
+    JOIN EJECUTIVOS JEFE ON SUB.ID_SUP_EJE = JEFE.ID_EJE
+    WHERE JEFE.CED_EJE = '1810'
+);
+
+5-----------------------------------------------------------------------------------
+
+
+SELECT EMP.ID_EMP, EMP.NOM_EMP, EMP.CIU_EMP
+FROM EMPRESAS EMP
+JOIN EJECUTIVOS E ON EMP.ID_EMP = E.ID_EMP_EJE
+JOIN HOSPEDAJES H ON E.ID_EJE = H.ID_EJE_HOS
+JOIN HABITACIONES HAB ON H.ID_HAB_HOS = HAB.ID_HAB
+WHERE HAB.TIP_HAB = 'Doble'
+AND H.FEC_ING BETWEEN TO_DATE('2026-01-01', 'YYYY-MM-DD') AND TO_DATE('2026-12-31', 'YYYY-MM-DD')
+GROUP BY EMP.ID_EMP, EMP.NOM_EMP, EMP.CIU_EMP
+HAVING COUNT(H.ID_HOS) > (
+    SELECT COUNT(H2.ID_HOS)
+    FROM EMPRESAS EMP2
+    JOIN EJECUTIVOS E2 ON EMP2.ID_EMP = E2.ID_EMP_EJE
+    JOIN HOSPEDAJES H2 ON E2.ID_EJE = H2.ID_EJE_HOS
+    JOIN HABITACIONES HAB2 ON H2.ID_HAB_HOS = HAB2.ID_HAB
+    WHERE EMP2.NOM_EMP = 'IESS'
+    AND HAB2.TIP_HAB = 'Doble'
+    AND H2.FEC_ING BETWEEN TO_DATE('2026-01-01', 'YYYY-MM-DD') AND TO_DATE('2026-12-31', 'YYYY-MM-DD')
+);
+
+6------------------------------------------------------------------------
+
+SELECT R.NOM_REC, R.APE_REC
+FROM RECEPCIONISTAS R
+JOIN HOSPEDAJES H ON R.ID_REC = H.ID_REC_HOS
+JOIN EJECUTIVOS E ON H.ID_EJE_HOS = E.ID_EJE
+WHERE R.ID_HOT_REC IN (
+    SELECT HAB.ID_HOT_HAB
+    FROM HABITACIONES HAB
+    GROUP BY HAB.ID_HOT_HAB
+    -- REQUISITO: COUNT y Agregación (AVG)
+    HAVING COUNT(HAB.ID_HAB) > (
+        SELECT AVG(CANT_HAB)
+        FROM (
+            SELECT COUNT(ID_HAB) AS CANT_HAB
+            FROM HABITACIONES
+            GROUP BY ID_HOT_HAB
+        )
+    )
+)
+GROUP BY R.ID_REC, R.NOM_REC, R.APE_REC
+HAVING COUNT(DISTINCT E.ID_EMP_EJE) > 1;
+
+
+
+
+-----Preguntas de defensa-----------------------------
+
+1-------------------------------------------------------
+
+En nuestro script original, decidimos usar GROUP BY y HAVING porque es más eficiente. El motor agrupa a todos los supervisores en memoria una sola vez, cuenta sus subordinados y filtra los que coinciden con el MAX(). Es una operación en bloque.
+
+Si tuviéramos que hacerlo con una subconsulta correlacionada, tendríamos que quitar el GROUP BY principal. La consulta evaluaría a cada ejecutivo fila por fila, y por cada uno, ejecutaría un SELECT COUNT para ver cuántos subordinados tiene, comparando ese resultado contra el máximo. Esto carga mucho más al motor porque la subconsulta se ejecuta repetidas veces.
+
+SELECT E.NOM_EJE, E.APE_EJE
+FROM EJECUTIVOS E
+JOIN EMPRESAS EMP ON E.ID_EMP_EJE = EMP.ID_EMP
+WHERE EMP.NOM_EMP = 'PETROECUADOR'
+AND (
+
+    SELECT COUNT(*) 
+    FROM EJECUTIVOS SUB1 
+    WHERE SUB1.ID_SUP_EJE = E.ID_EJE
+) = (
+
+    SELECT MAX(COUNT(*)) 
+    FROM EJECUTIVOS 
+    WHERE ID_SUP_EJE IS NOT NULL 
+    GROUP BY ID_SUP_EJE
+)
+AND EXISTS (
+   
+    SELECT * FROM EJECUTIVOS SUB2
+    JOIN HOSPEDAJES H ON SUB2.ID_EJE = H.ID_EJE_HOS
+    JOIN HABITACIONES HAB ON H.ID_HAB_HOS = HAB.ID_HAB
+    JOIN HOTELES HOT ON HAB.ID_HOT_HAB = HOT.ID_HOT
+    WHERE SUB2.ID_SUP_EJE = E.ID_EJE -- Se correlaciona con el jefe actual
+    AND HOT.NOM_HOT = 'COLON'
+    AND H.FEC_ING BETWEEN TO_DATE('2026-03-01','YYYY-MM-DD') AND TO_DATE('2026-03-31','YYYY-MM-DD')
+);
+
+
+2-------------------------------------------------------
+
+
+La subconsulta de comparación salarial es una subconsulta correlacionada ubicada en el WHERE que calcula el promedio de la empresa. Exactamente esta línea:
+
+SELECT AVG(E3.SUE_EJE) FROM EJECUTIVOS E3 WHERE E3.ID_EMP_EJE = E.ID_EMP_EJE
+
+Si intento sombrear solo este pedacito y ejecutarlo, el motor me dará error. Esto ocurre porque la variable E.ID_EMP_EJE depende de la consulta principal (externa). Para mostrar su resultado por separado en vivo, debo 'desvincularla' reemplazando la variable por un valor estático.
+
+
+SELECT AVG(SUE_EJE) AS PROMEDIO_EMPRESA
+FROM EJECUTIVOS 
+WHERE ID_EMP_EJE = 'EMP-01';
+
+3-------------------------------------------------------------
+
+
+Actualmente nuestra consulta usa > ALL (que matemáticamente es lo mismo que > MAX). Esto significa que el ejecutivo debe ganar más que todos y cada uno de los subordinados del 1810. Es una restricción muy fuerte.
+
+Si cambiamos el operador a > ANY, la lógica matemática cambia por completo. Ahora significa 'ganar más que al menos uno de los subordinados'. Esto es matemáticamente equivalente a decir que solo necesita ganar más que el empleado con el sueldo más bajo (> MIN). La consulta se vuelve más permisiva y devolverá más resultados.
+
+SELECT DISTINCT E.NOM_EJE, E.APE_EJE, E.SUE_EJE
+FROM EJECUTIVOS E
+JOIN HOSPEDAJES H ON E.ID_EJE = H.ID_EJE_HOS
+JOIN HABITACIONES HAB ON H.ID_HAB_HOS = HAB.ID_HAB
+WHERE UPPER(HAB.TIP_HAB) = 'SUITE'
+AND E.SUE_EJE > ANY (
+    SELECT SUB.SUE_EJE
+    FROM EJECUTIVOS SUB
+    JOIN EJECUTIVOS JEFE ON SUB.ID_SUP_EJE = JEFE.ID_EJE
+    WHERE JEFE.CED_EJE = '1810'
+);
+
+
+4------------------------------------------------------------------
+
+En la consulta 6 dependemos matemáticamente de calcular el promedio general de habitaciones que tienen los hoteles. Para que este cálculo sea exacto y sin ambigüedades, es obligatorio que el atributo ID_HOT_HAB (la clave foránea en la tabla HABITACIONES) tenga la restricción NOT NULL.
+
+Si permitiéramos valores nulos en esa clave foránea, un usuario podría insertar 'habitaciones fantasma' que no pertenecen a ningún hotel. Cuando el motor ejecute el GROUP BY ID_HOT_HAB, agrupará todas esas habitaciones huérfanas en un 'grupo nulo' contándolo como si fuera un hotel más. Esto destruiría el divisor al calcular el promedio (AVG), dándonos un número irreal que arruinaría la condición de toda la consulta.
+
