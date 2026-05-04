@@ -1,0 +1,1133 @@
+Gemini
+Planificación Clase Integrantes del grupo: Cristian Ango, Matias Morales, Luis Miranda, Melany Cevallos -- 1) Crear el usuario del proyecto CREATE USER clase_dml IDENTIFIED BY 1234; GRANT CONNECT, RESOURCE TO clase_dml; ALTER USER clase_dml QUOTA UNLIMITED ON USERS;   -- 2) Conectarse con el usuario creado CONNECT clase_dml/1234;   -- 3) Crear tablas maestras CREATE TABLE roles (   id_rol NUMBER PRIMARY KEY,   nombre VARCHAR2(50) NOT NULL );   CREATE TABLE departamentos (  id_departamento NUMBER PRIMARY KEY,   nombre VARCHAR2(60) NOT NULL );   CREATE TABLE categorias (   id_categoria NUMBER PRIMARY KEY,   nombre VARCHAR2(60) NOT NULL );   CREATE TABLE ubicaciones (   id_ubicacion NUMBER PRIMARY KEY,   nombre VARCHAR2(60) NOT NULL,  id_departamento NUMBER NOT NULL,   CONSTRAINT fk_ubicaciones_departamentos FOREIGN KEY (id_departamento)     REFERENCES departamentos(id_departamento) );   CREATE TABLE articulos (   id_articulo NUMBER PRIMARY KEY,   descripcion VARCHAR2(100) NOT NULL,   id_categoria NUMBER NOT NULL,   stock NUMBER NOT NULL,   CONSTRAINT ck_articulos_stock CHECK (stock >= 0),   CONSTRAINT fk_articulos_categorias FOREIGN KEY (id_categoria)     REFERENCES categorias(id_categoria) );   -- 4) Crear tablas dependientes CREATE TABLE usuarios (   id_usuario NUMBER PRIMARY KEY,   nombre VARCHAR2(80) NOT NULL,   id_rol NUMBER NOT NULL,  id_departamento NUMBER NOT NULL,   id_ubicacion NUMBER NOT NULL,   CONSTRAINT fk_usuarios_roles FOREIGN KEY (id_rol)     REFERENCES roles(id_rol),   CONSTRAINT fk_usuarios_departamentos FOREIGN KEY (id_departamento)     REFERENCES departamentos(id_departamento),|   CONSTRAINT fk_usuarios_ubicaciones FOREIGN KEY (id_ubicacion)     REFERENCES ubicaciones(id_ubicacion) );   CREATE TABLE prestamos (   id_prestamo NUMBER PRIMARY KEY,   id_usuario NUMBER NOT NULL,   id_articulo NUMBER NOT NULL,   fecha_prestamo DATE NOT NULL,   fecha_devolucion DATE,   cantidad NUMBER NOT NULL,   CONSTRAINT ck_prestamos_cantidad CHECK (cantidad > 0),   CONSTRAINT fk_prestamos_usuarios FOREIGN KEY (id_usuario)     REFERENCES usuarios(id_usuario),   CONSTRAINT fk_prestamos_articulos FOREIGN KEY (id_articulo)     REFERENCES articulos(id_articulo) );   -- 5) Verificar que el esquema quedó listo SELECT table_name FROM user_tables ORDER BY table_name; -- [INSERT 1] Cargar ROLES (tabla padre) INSERT INTO roles VALUES (1, 'Administrador'); INSERT INTO roles VALUES (2, 'Bibliotecario'); INSERT INTO roles VALUES (3, 'Usuario');   -- [INSERT 2] Cargar DEPARTAMENTOS (tabla padre) INSERT INTO departamentos VALUES (10, 'Sistemas'); INSERT INTO departamentos VALUES (20, 'Docencia'); INSERT INTO departamentos VALUES (30, 'Administrativo');   -- [INSERT 3] Cargar UBICACIONES (FK→DEPARTAMENTOS) INSERT INTO ubicaciones VALUES (100, 'Bloque A', 10); INSERT INTO ubicaciones VALUES (101, 'Bloque B', 20); INSERT INTO ubicaciones VALUES (102, 'Bloque C', 30);   -- [INSERT 4] Cargar CATEGORIAS y ARTICULOS INSERT INTO categorias VALUES (1, 'Equipos'); INSERT INTO categorias VALUES (2, 'Accesorios'); INSERT INTO articulos VALUES (1, 'Laptop HP 15', 1, 10); INSERT INTO articulos VALUES (2, 'Mouse Inalámbrico', 2, 25); INSERT INTO articulos VALUES (3, 'Teclado Mecánico', 2, 15);   -- [INSERT 5] Cargar USUARIOS y PRESTAMOS INSERT INTO usuarios VALUES (10, 'Juan Pérez', 1, 10, 100); INSERT INTO usuarios VALUES (11, 'María López', 2, 20, 101); INSERT INTO usuarios VALUES (12, 'Carlos Ruiz', 3, 30, 102); INSERT INTO prestamos VALUES (100, 10, 1, SYSDATE, NULL, 1); INSERT INTO prestamos VALUES (101, 11, 2, SYSDATE, NULL, 3); INSERT INTO prestamos VALUES (102, 12, 3, SYSDATE, NULL, 2);   -- Verificar carga completa SELECT u.nombre, p.id_prestamo, a.descripcion, p.cantidad FROM prestamos p JOIN usuarios u ON p.id_usuario = u.id_usuario JOIN articulos a ON p.id_articulo = a.id_articulo; -- [INSERT EXTRA - ERROR INTENCIONAL] -- Intentar insertar préstamo para id_usuario = 99 que NO existe INSERT INTO prestamos VALUES (200, 99, 1, SYSDATE, NULL, 1);   -- RESULTADO ESPERADO: -- ORA-02291: integrity constraint (CLASE_DML.FK_PRESTAMOS_USUARIO) --            violated - parent key not found   -- ANÁLISIS: Oracle rechaza el INSERT porque id_usuario=99 -- no tiene ninguna fila en la tabla USUARIOS (tabla padre). -- Solución: insertar el usuario 99 primero. EJERCICIO 1 La biblioteca incorpora un nuevo usuario VIP: ID 20, nombre "Pedro Sánchez". Se le asigna el rol de bibliotecario, pertenece al departamento de Sistemas y a la ubicación Bloque A. Luego registra un préstamo del artículo 1 (Laptop HP 15) con cantidad 2.  Tarea: Escribe las sentencias INSERT necesarias en el orden correcto, con un comentario explicativo en cada una. Luego verifica la inserción con un SELECT con JOIN que muestre: nombre del usuario, id del préstamo, descripción del artículo y cantidad. SOLUCION -- Paso 1: Insertar el usuario VIP INSERT INTO usuarios VALUES (20, 'Pedro Sánchez', 2, 10, 100);   -- Paso 2: Insertar el préstamo del usuario 20 INSERT INTO prestamos VALUES (300, 20, 1, SYSDATE, NULL, 2);   -- Paso 3: Verificación con JOIN SELECT u.nombre usuario, p.id_prestamo, a.descripcion, p.cantidad FROM usuarios u JOIN prestamos p ON u.id_usuario = p.id_usuario JOIN articulos a ON p.id_articulo = a.id_articulo WHERE u.id_usuario = 20; -- [UPDATE 1] Cambiar ubicación del usuario 10 — patrón seguro SELECT * FROM usuarios WHERE id_usuario = 10;         -- paso 1: ver antes UPDATE usuarios SET id_ubicacion = 101 WHERE id_usuario = 10; SELECT * FROM usuarios WHERE id_usuario = 10;         -- paso 2: verificar   -- [UPDATE 2] Ajustar stock del artículo 1 tras inventario UPDATE articulos SET stock = 12 WHERE id_articulo = 1;                               -- Laptop sube a 12   -- [UPDATE 3] Recalcular fecha de devolución del préstamo 100 UPDATE prestamos SET fecha_devolucion = SYSDATE WHERE id_prestamo = 100;   -- [UPDATE 4] Modificar múltiples columnas en un solo UPDATE UPDATE usuarios SET nombre = 'Juan Carlos Pérez', id_ubicacion = 102 WHERE id_usuario = 10;   -- [UPDATE 5] Ajustar cantidad del préstamo del usuario 11 UPDATE prestamos SET cantidad = cantidad + 1 WHERE id_usuario = 11;   -- Verificar estado actual de préstamos SELECT id_prestamo, id_usuario, cantidad FROM prestamos ORDER BY id_prestamo; -- [UPDATE ERROR INTENCIONAL] -- Intentar poner cantidad negativa — viola restricción CHECK (cantidad >= 0) UPDATE prestamos SET cantidad = -50 WHERE id_prestamo = 101;   -- RESULTADO ESPERADO: -- ORA-02290: check constraint (CLASE_DML.SYS_C...) violated   -- ANÁLISIS: La restricción CHECK impide valores negativos en 'cantidad'. -- Oracle rechaza el UPDATE sin modificar ninguna fila. -- Solución: usar un valor >= 0.   EJERCICIO 2 Escenario: La biblioteca detectó que todos los usuarios del departamento de "Docencia" serán movidos a la ubicación "Bloque C". Además, todos los préstamos con cantidad menor a 2 deben incrementarse en 1 unidad. Tarea: Escribe los dos UPDATEs necesarios usando el patrón seguro (SELECT → UPDATE → SELECT). Cada sentencia debe tener comentario. Cuántas filas afecta cada UPDATE? SOLUCION -- Verificar cuántos usuarios son de Docencia SELECT * FROM usuarios WHERE id_departamento = 20;        -- debe ver las filas del departamento Docencia   -- UPDATE 1: Migrar usuarios de Docencia a Bloque C UPDATE usuarios SET id_ubicacion = 102 WHERE id_departamento = 20; -- Afecta: todas las filas donde id_departamento=20   -- Verificar préstamos con cantidad < 2 SELECT * FROM prestamos WHERE cantidad < 2;   -- UPDATE 2: Incrementar en 1 la cantidad de préstamos pequeños UPDATE prestamos SET cantidad = cantidad + 1 WHERE cantidad < 2; -- Afecta: todas las filas con cantidad < 2 (puede ser varias)   SELECT * FROM prestamos ORDER BY id_prestamo;  -- verificar resultado final -- Estado actual antes de eliminar SELECT 'USUARIOS' tab, COUNT(*) n FROM usuarios UNION ALL SELECT 'PRESTAMOS', COUNT(*) FROM prestamos UNION ALL SELECT 'ARTICULOS', COUNT(*) FROM articulos;   -- [DELETE 1] Eliminar un préstamo específico DELETE FROM prestamos WHERE id_prestamo = 3; -- Solo afecta 1 fila, sin dependencias   -- [DELETE 2] Eliminar el préstamo 102 DELETE FROM prestamos WHERE id_prestamo = 102;   -- [DELETE 3] ERROR INTENCIONAL: intentar eliminar usuario con préstamos activos DELETE FROM usuarios WHERE id_usuario = 11; -- ORA-02292: integrity constraint violated - child record found   -- [DELETE 4] Eliminar todos los préstamos del usuario 11 primero DELETE FROM prestamos WHERE id_usuario = 11;   -- [DELETE 5] Ahora sí se puede eliminar el usuario 11 (ya no tiene hijos) DELETE FROM usuarios WHERE id_usuario = 11;   -- Verificar estado final SELECT 'USUARIOS' tab, COUNT(*) n FROM usuarios UNION ALL SELECT 'PRESTAMOS', COUNT(*) FROM prestamos UNION ALL SELECT 'ARTICULOS', COUNT(*) FROM articulos; EJERCICIO 3 Escenario: El usuario con id_usuario = 20 (Pedro Sánchez, que insertaron en el Extra #1) se da de baja del sistema. Deben eliminarlo de forma completa y segura. Tarea: 1. Identifica todas las tablas que tienen datos relacionados con el usuario 20 (usa SELECTs). 2. Escribe los DELETEs en el orden correcto con comentario en cada uno. 3. Intenta primero eliminar el usuario directo (para capturar el error ORA-02292). 4. Verifica con SELECT que ya no existe ningún rastro del usuario 20 en ninguna tabla. 5. Finaliza con COMMIT. SOLUCION -- Paso 0: Identificar todos los registros relacionados SELECT * FROM usuarios WHERE id_usuario = 20; SELECT * FROM prestamos WHERE id_usuario = 20; SELECT * FROM articulos WHERE id_articulo = 1;   -- Paso 1: ERROR INTENCIONAL (evidencia) DELETE FROM usuarios WHERE id_usuario = 20; -- ORA-02292: integrity constraint violated - child record found   -- Paso 2: Eliminar los préstamos del usuario 20 DELETE FROM prestamos WHERE id_usuario = 20;   -- Paso 3: Eliminar el artículo asociado si corresponde DELETE FROM articulos WHERE id_articulo = 1;   -- Paso 4: Ahora sí eliminar el USUARIO 20 DELETE FROM usuarios WHERE id_usuario = 20;   -- Paso 5: Verificar que no queda rastro SELECT * FROM usuarios WHERE id_usuario = 20;    -- 0 rows SELECT * FROM prestamos WHERE id_usuario = 20;     -- 0 rows   -- Paso 6: Confirmar cambios COMMIT; pasame esto para un archivo .sql lo que sea teoria o comentarios ya sabes comentados
+Conversación con Gemini
+Planificación Clase
+
+Integrantes
+
+del grupo: Cristian Ango, Matias Morales, Luis Miranda, Melany Cevallos
+
+-- 1) Crear el
+
+usuario del proyecto
+
+CREATE USER clase_dml IDENTIFIED BY 1234;
+
+GRANT CONNECT, RESOURCE TO clase_dml;
+
+ALTER USER clase_dml QUOTA UNLIMITED ON USERS;
+
+ 
+
+-- 2)
+
+Conectarse con el usuario creado
+
+CONNECT
+
+clase_dml/1234;
+
+ 
+
+-- 3) Crear
+
+tablas maestras
+
+CREATE TABLE
+
+roles (
+
+  id_rol NUMBER PRIMARY KEY,
+
+  nombre
+
+VARCHAR2(50) NOT NULL
+
+);
+
+ 
+
+CREATE TABLE departamentos (
+
+ id_departamento NUMBER PRIMARY KEY,
+
+  nombre
+
+VARCHAR2(60) NOT NULL
+
+);
+
+ 
+
+CREATE TABLE categorias (
+
+  id_categoria
+
+NUMBER PRIMARY KEY,
+
+  nombre
+
+VARCHAR2(60) NOT NULL
+
+);
+
+ 
+
+CREATE TABLE ubicaciones (
+
+  id_ubicacion
+
+NUMBER PRIMARY KEY,
+
+  nombre
+
+VARCHAR2(60) NOT NULL,
+
+ id_departamento NUMBER NOT NULL,
+
+  CONSTRAINT
+
+fk_ubicaciones_departamentos FOREIGN KEY (id_departamento)
+
+    REFERENCES departamentos(id_departamento)
+
+);
+
+ 
+
+CREATE TABLE articulos (
+
+  id_articulo
+
+NUMBER PRIMARY KEY,
+
+  descripcion
+
+VARCHAR2(100) NOT NULL,
+
+  id_categoria
+
+NUMBER NOT NULL,
+
+  stock NUMBER
+
+NOT NULL,
+
+  CONSTRAINT
+
+ck_articulos_stock CHECK (stock >= 0),
+
+  CONSTRAINT
+
+fk_articulos_categorias FOREIGN KEY (id_categoria)
+
+    REFERENCES
+
+categorias(id_categoria)
+
+);
+
+ 
+
+-- 4) Crear
+
+tablas dependientes
+
+CREATE TABLE usuarios (
+
+  id_usuario
+
+NUMBER PRIMARY KEY,
+
+  nombre
+
+VARCHAR2(80) NOT NULL,
+
+  id_rol NUMBER
+
+NOT NULL,
+
+ id_departamento NUMBER NOT NULL,
+
+  id_ubicacion
+
+NUMBER NOT NULL,
+
+  CONSTRAINT
+
+fk_usuarios_roles FOREIGN KEY (id_rol)
+
+    REFERENCES
+
+roles(id_rol),
+
+  CONSTRAINT
+
+fk_usuarios_departamentos FOREIGN KEY (id_departamento)
+
+    REFERENCES
+
+departamentos(id_departamento),|
+
+  CONSTRAINT
+
+fk_usuarios_ubicaciones FOREIGN KEY (id_ubicacion)
+
+    REFERENCES
+
+ubicaciones(id_ubicacion)
+
+);
+
+ 
+
+CREATE TABLE
+
+prestamos (
+
+  id_prestamo NUMBER PRIMARY KEY,
+
+  id_usuario
+
+NUMBER NOT NULL,
+
+  id_articulo
+
+NUMBER NOT NULL,
+
+  fecha_prestamo
+
+DATE NOT NULL,
+
+  fecha_devolucion DATE,
+
+  cantidad NUMBER NOT NULL,
+
+  CONSTRAINT ck_prestamos_cantidad CHECK
+
+(cantidad > 0),
+
+  CONSTRAINT fk_prestamos_usuarios FOREIGN KEY
+
+(id_usuario)
+
+    REFERENCES usuarios(id_usuario),
+
+  CONSTRAINT fk_prestamos_articulos FOREIGN KEY (id_articulo)
+
+    REFERENCES
+
+articulos(id_articulo)
+
+);
+
+ 
+
+-- 5) Verificar
+
+que el esquema quedó listo
+
+SELECT table_name FROM user_tables ORDER BY
+
+table_name;
+
+-- [INSERT 1]
+
+Cargar ROLES (tabla padre)
+
+INSERT INTO roles VALUES (1, 'Administrador');
+
+INSERT INTO roles VALUES (2, 'Bibliotecario');
+
+INSERT INTO roles VALUES (3, 'Usuario');
+
+ 
+
+-- [INSERT 2]
+
+Cargar DEPARTAMENTOS (tabla padre)
+
+INSERT INTO
+
+departamentos VALUES (10, 'Sistemas');
+
+INSERT INTO
+
+departamentos VALUES (20, 'Docencia');
+
+INSERT INTO
+
+departamentos VALUES (30, 'Administrativo');
+
+ 
+
+-- [INSERT 3]
+
+Cargar UBICACIONES (FK→DEPARTAMENTOS)
+
+INSERT INTO
+
+ubicaciones VALUES (100, 'Bloque A', 10);
+
+INSERT INTO
+
+ubicaciones VALUES (101, 'Bloque B', 20);
+
+INSERT INTO
+
+ubicaciones VALUES (102, 'Bloque C', 30);
+
+ 
+
+-- [INSERT 4]
+
+Cargar CATEGORIAS y ARTICULOS
+
+INSERT INTO
+
+categorias VALUES (1, 'Equipos');
+
+INSERT INTO categorias VALUES (2, 'Accesorios');
+
+INSERT INTO articulos VALUES (1, 'Laptop HP 15', 1,
+
+10);
+
+INSERT INTO articulos VALUES (2, 'Mouse Inalámbrico',
+
+2, 25);
+
+INSERT INTO
+
+articulos VALUES (3, 'Teclado Mecánico', 2, 15);
+
+ 
+
+-- [INSERT 5]
+
+Cargar USUARIOS y PRESTAMOS
+
+INSERT INTO
+
+usuarios VALUES (10, 'Juan Pérez', 1, 10, 100);
+
+INSERT INTO
+
+usuarios VALUES (11, 'María López', 2, 20, 101);
+
+INSERT INTO
+
+usuarios VALUES (12, 'Carlos Ruiz', 3, 30, 102);
+
+INSERT INTO
+
+prestamos VALUES (100, 10, 1, SYSDATE, NULL, 1);
+
+INSERT INTO prestamos VALUES (101, 11, 2, SYSDATE,
+
+NULL, 3);
+
+INSERT INTO prestamos VALUES (102, 12, 3, SYSDATE,
+
+NULL, 2);
+
+ 
+
+-- Verificar
+
+carga completa
+
+SELECT
+
+u.nombre, p.id_prestamo, a.descripcion, p.cantidad
+
+FROM prestamos
+
+p
+
+JOIN usuarios u
+
+ON p.id_usuario = u.id_usuario
+
+JOIN articulos
+
+a ON p.id_articulo = a.id_articulo;
+
+-- [INSERT
+
+EXTRA - ERROR INTENCIONAL]
+
+-- Intentar
+
+insertar préstamo para id_usuario = 99 que NO existe
+
+INSERT INTO prestamos VALUES (200, 99, 1, SYSDATE,
+
+NULL, 1);
+
+ 
+
+-- RESULTADO
+
+ESPERADO:
+
+-- ORA-02291:
+
+integrity constraint (CLASE_DML.FK_PRESTAMOS_USUARIO)
+
+--            violated - parent key not found
+
+ 
+
+-- ANÁLISIS:
+
+Oracle rechaza el INSERT porque id_usuario=99
+
+-- no tiene
+
+ninguna fila en la tabla USUARIOS (tabla padre).
+
+-- Solución:
+
+insertar el usuario 99 primero.
+
+EJERCICIO 1
+
+La biblioteca incorpora un nuevo usuario VIP:
+
+ID 20, nombre "Pedro Sánchez". Se le asigna el rol de bibliotecario,
+
+pertenece al departamento de Sistemas y a la ubicación Bloque A. Luego registra
+
+un préstamo del artículo 1 (Laptop HP 15) con cantidad 2.  Tarea: Escribe las sentencias INSERT
+
+necesarias en el orden correcto, con un comentario explicativo en cada una.
+
+Luego verifica la inserción con un SELECT con JOIN que muestre: nombre del
+
+usuario, id del préstamo, descripción del artículo y cantidad.
+
+SOLUCION
+
+-- Paso 1:
+
+Insertar el usuario VIP
+
+INSERT INTO
+
+usuarios VALUES (20, 'Pedro Sánchez', 2, 10, 100);
+
+ 
+
+-- Paso 2:
+
+Insertar el préstamo del usuario 20
+
+INSERT INTO prestamos VALUES (300, 20, 1, SYSDATE,
+
+NULL, 2);
+
+ 
+
+-- Paso 3:
+
+Verificación con JOIN
+
+SELECT u.nombre
+
+usuario, p.id_prestamo, a.descripcion, p.cantidad
+
+FROM usuarios u
+
+JOIN prestamos
+
+p ON u.id_usuario = p.id_usuario
+
+JOIN articulos
+
+a ON p.id_articulo = a.id_articulo
+
+WHERE
+
+u.id_usuario = 20;
+
+-- [UPDATE 1]
+
+Cambiar ubicación del usuario 10 — patrón seguro
+
+SELECT * FROM
+
+usuarios WHERE id_usuario = 10;         -- paso 1: ver antes
+
+UPDATE usuarios
+
+SET id_ubicacion = 101
+
+WHERE
+
+id_usuario = 10;
+
+SELECT * FROM
+
+usuarios WHERE id_usuario = 10;         -- paso 2: verificar
+
+ 
+
+-- [UPDATE 2]
+
+Ajustar stock del artículo 1 tras inventario
+
+UPDATE articulos SET stock = 12
+
+WHERE id_articulo = 1;                               -- Laptop sube a
+
+12
+
+ 
+
+-- [UPDATE 3]
+
+Recalcular fecha de devolución del préstamo 100
+
+UPDATE
+
+prestamos SET fecha_devolucion = SYSDATE
+
+WHERE
+
+id_prestamo = 100;
+
+ 
+
+-- [UPDATE 4]
+
+Modificar múltiples columnas en un solo UPDATE
+
+UPDATE usuarios
+
+SET nombre =
+
+'Juan Carlos Pérez', id_ubicacion = 102
+
+WHERE
+
+id_usuario = 10;
+
+ 
+
+-- [UPDATE 5]
+
+Ajustar cantidad del préstamo del usuario 11
+
+UPDATE
+
+prestamos
+
+SET cantidad =
+
+cantidad + 1
+
+WHERE
+
+id_usuario = 11;
+
+ 
+
+-- Verificar
+
+estado actual de préstamos
+
+SELECT
+
+id_prestamo, id_usuario, cantidad FROM prestamos ORDER BY id_prestamo;
+
+-- [UPDATE
+
+ERROR INTENCIONAL]
+
+-- Intentar
+
+poner cantidad negativa — viola restricción CHECK (cantidad >= 0)
+
+UPDATE
+
+prestamos SET cantidad = -50
+
+WHERE
+
+id_prestamo = 101;
+
+ 
+
+-- RESULTADO
+
+ESPERADO:
+
+-- ORA-02290: check constraint (CLASE_DML.SYS_C...) violated
+
+ 
+
+-- ANÁLISIS: La
+
+restricción CHECK impide valores negativos en 'cantidad'.
+
+-- Oracle
+
+rechaza el UPDATE sin modificar ninguna fila.
+
+-- Solución:
+
+usar un valor >= 0.
+
+ 
+
+EJERCICIO
+
+2
+
+Escenario: La biblioteca detectó que todos
+
+los usuarios del departamento de "Docencia" serán movidos a la
+
+ubicación "Bloque C". Además, todos los préstamos con cantidad menor
+
+a 2 deben incrementarse en 1 unidad. Tarea: Escribe los dos UPDATEs necesarios usando el patrón seguro
+
+(SELECT → UPDATE → SELECT). Cada sentencia debe tener comentario. Cuántas filas
+
+afecta cada UPDATE?
+
+SOLUCION
+
+-- Verificar
+
+cuántos usuarios son de Docencia
+
+SELECT * FROM
+
+usuarios WHERE id_departamento = 20;        -- debe ver las filas del departamento
+
+Docencia
+
+ 
+
+-- UPDATE 1:
+
+Migrar usuarios de Docencia a Bloque C
+
+UPDATE usuarios
+
+SET id_ubicacion = 102
+
+WHERE
+
+id_departamento = 20;
+
+-- Afecta:
+
+todas las filas donde id_departamento=20
+
+ 
+
+-- Verificar
+
+préstamos con cantidad < 2
+
+SELECT * FROM
+
+prestamos WHERE cantidad < 2;
+
+ 
+
+-- UPDATE 2:
+
+Incrementar en 1 la cantidad de préstamos pequeños
+
+UPDATE
+
+prestamos SET cantidad = cantidad + 1
+
+WHERE cantidad
+
+< 2;
+
+-- Afecta:
+
+todas las filas con cantidad < 2 (puede ser varias)
+
+ 
+
+SELECT * FROM
+
+prestamos ORDER BY id_prestamo;  --
+
+verificar resultado final
+
+-- Estado
+
+actual antes de eliminar
+
+SELECT 'USUARIOS' tab, COUNT(*) n FROM usuarios
+
+UNION ALL SELECT 'PRESTAMOS', COUNT(*) FROM prestamos
+
+UNION ALL SELECT 'ARTICULOS', COUNT(*) FROM articulos;
+
+ 
+
+-- [DELETE 1]
+
+Eliminar un préstamo específico
+
+DELETE FROM
+
+prestamos WHERE id_prestamo = 3;
+
+-- Solo afecta
+
+1 fila, sin dependencias
+
+ 
+
+-- [DELETE 2]
+
+Eliminar el préstamo 102
+
+DELETE FROM prestamos WHERE id_prestamo = 102;
+
+ 
+
+-- [DELETE 3]
+
+ERROR INTENCIONAL: intentar eliminar usuario con préstamos activos
+
+DELETE FROM usuarios WHERE id_usuario = 11;
+
+-- ORA-02292: integrity constraint violated - child
+
+record found
+
+ 
+
+-- [DELETE 4]
+
+Eliminar todos los préstamos del usuario 11 primero
+
+DELETE FROM
+
+prestamos WHERE id_usuario = 11;
+
+ 
+
+-- [DELETE 5]
+
+Ahora sí se puede eliminar el usuario 11 (ya no tiene hijos)
+
+DELETE FROM
+
+usuarios WHERE id_usuario = 11;
+
+ 
+
+-- Verificar
+
+estado final
+
+SELECT 'USUARIOS' tab, COUNT(*) n FROM usuarios
+
+UNION ALL SELECT 'PRESTAMOS', COUNT(*) FROM prestamos
+
+UNION ALL SELECT 'ARTICULOS', COUNT(*) FROM articulos;
+
+EJERCICIO
+
+3
+
+Escenario: El usuario con id_usuario = 20
+
+(Pedro Sánchez, que insertaron en el Extra #1) se da de baja del sistema. Deben
+
+eliminarlo de forma completa y segura. Tarea: 1. Identifica todas las tablas que tienen datos relacionados con
+
+el usuario 20 (usa SELECTs). 2. Escribe los DELETEs en el orden correcto con
+
+comentario en cada uno. 3. Intenta primero eliminar el usuario directo (para
+
+capturar el error ORA-02292). 4. Verifica con SELECT que ya no existe ningún
+
+rastro del usuario 20 en ninguna tabla. 5. Finaliza con COMMIT.
+
+SOLUCION
+
+-- Paso 0:
+
+Identificar todos los registros relacionados
+
+SELECT * FROM
+
+usuarios WHERE id_usuario = 20;
+
+SELECT * FROM prestamos WHERE id_usuario = 20;
+
+SELECT * FROM articulos WHERE id_articulo = 1;
+
+ 
+
+-- Paso 1:
+
+ERROR INTENCIONAL (evidencia)
+
+DELETE FROM
+
+usuarios WHERE id_usuario = 20;
+
+-- ORA-02292: integrity constraint violated - child
+
+record found
+
+ 
+
+-- Paso 2:
+
+Eliminar los préstamos del usuario 20
+
+DELETE FROM
+
+prestamos WHERE id_usuario = 20;
+
+ 
+
+-- Paso 3:
+
+Eliminar el artículo asociado si corresponde
+
+DELETE FROM articulos WHERE id_articulo = 1;
+
+ 
+
+-- Paso 4:
+
+Ahora sí eliminar el USUARIO 20
+
+DELETE FROM
+
+usuarios WHERE id_usuario = 20;
+
+ 
+
+-- Paso 5:
+
+Verificar que no queda rastro
+
+SELECT * FROM usuarios WHERE id_usuario = 20;    -- 0 rows
+
+SELECT * FROM prestamos WHERE id_usuario = 20;     -- 0 rows
+
+ 
+
+-- Paso 6:
+
+Confirmar cambios
+
+COMMIT;
+
+
+
+pasame esto para un archivo .sql lo que sea teoria o comentarios ya sabes comentados
+
+He preparado el archivo .sql siguiendo la estructura de tu planificación. He organizado todo el contenido (DDL, DML, ejercicios y explicaciones teóricas) utilizando comentarios de SQL para que el script sea ejecutable de principio a fin sin errores de sintaxis.
+
+Tu archivo SQL está listo:
+[file-tag: planificacion_clase_dml.sql]
+
+Resumen del contenido del archivo:
+Configuración Inicial: Creación del usuario clase_dml y asignación de permisos.
+
+Definición de Esquema (DDL): Creación de tablas maestras (roles, departamentos, categorias, ubicaciones, articulos) y tablas dependientes (usuarios, prestamos).
+
+Carga de Datos (DML): Inserciones iniciales y ejemplos de errores de integridad referencial.
+
+Ejercicios y Soluciones:
+
+Ejercicio 1: Inserción de un usuario VIP y su préstamo asociado.
+
+Ejercicio 2: Actualizaciones masivas basadas en condiciones de departamento y cantidad.
+
+Ejercicio 3: Borrado seguro de registros respetando las restricciones de llave foránea (Foreign Keys).
+
+Control de Transacciones: Inclusión de COMMIT al final de las operaciones de limpieza.
+
+Recuerda que para ejecutar las primeras líneas de creación de usuario, normalmente necesitas privilegios de SYS o SYSTEM. Una vez creado el usuario, el resto del script se ejecuta bajo el esquema clase_dml.
+
+Tu archivo SQL está listo.
+Icono de SQL
+ planificac..._clase_dml 
+SQL
+
+He organizado toda la planificación de la clase en un único archivo ejecutable. Tal como solicitaste, la teoría, los análisis de errores y los enunciados de los ejercicios se han incorporado usando comentarios de SQL (--).
+
+El script incluye el flujo completo:
+
+Creación y configuración del usuario (DDL y DCL inicial).
+
+Creación de las tablas maestras y dependientes con sus respectivas llaves y validaciones (DDL).
+
+Los comandos INSERT, UPDATE y DELETE con los ejercicios paso a paso y los errores intencionales comentados para evitar que la ejecución se detenga y sirvan como explicación teórica (DML).
+
+Confirmación final de la transacción con COMMIT.
+
+¡Espero que sea de gran utilidad para la clase de Cristian, Matias, Luis y Melany!
+
+
+
+
+
+Gemini es una IA y puede cometer errores.
+
+-- ==========================================================
+-- PLANIFICACIÓN DE CLASE: DML Y DDL EN ORACLE
+-- INTEGRANTES DEL GRUPO:
+--   - Cristian Ango
+--   - Matias Morales
+--   - Luis Miranda
+--   - Melany Cevallos
+-- ==========================================================
+
+-- 1) CREAR EL USUARIO DEL PROYECTO
+-- Nota: Ejecutar como usuario con privilegios administrativos (SYS/SYSTEM)
+CREATE USER clase_dml IDENTIFIED BY 1234;
+GRANT CONNECT, RESOURCE TO clase_dml;
+ALTER USER clase_dml QUOTA UNLIMITED ON USERS;
+
+-- 2) CONECTARSE CON EL USUARIO CREADO
+-- CONNECT clase_dml/1234;
+
+-- 3) CREAR TABLAS MAESTRAS (Aquellas que no dependen de otras)
+
+CREATE TABLE roles (
+    id_rol NUMBER PRIMARY KEY,
+    nombre VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE departamentos (
+    id_departamento NUMBER PRIMARY KEY,
+    nombre VARCHAR2(60) NOT NULL
+);
+
+CREATE TABLE categorias (
+    id_categoria NUMBER PRIMARY KEY,
+    nombre VARCHAR2(60) NOT NULL
+);
+
+CREATE TABLE ubicaciones (
+    id_ubicacion NUMBER PRIMARY KEY,
+    nombre VARCHAR2(60) NOT NULL,
+    id_departamento NUMBER NOT NULL,
+    CONSTRAINT fk_ubicaciones_departamentos FOREIGN KEY (id_departamento)
+        REFERENCES departamentos(id_departamento)
+);
+
+CREATE TABLE articulos (
+    id_articulo NUMBER PRIMARY KEY,
+    descripcion VARCHAR2(100) NOT NULL,
+    id_categoria NUMBER NOT NULL,
+    stock NUMBER NOT NULL,
+    CONSTRAINT ck_articulos_stock CHECK (stock >= 0),
+    CONSTRAINT fk_articulos_categorias FOREIGN KEY (id_categoria)
+        REFERENCES categorias(id_categoria)
+);
+
+-- 4) CREAR TABLAS DEPENDIENTES (Contienen llaves foráneas a las maestras)
+
+CREATE TABLE usuarios (
+    id_usuario NUMBER PRIMARY KEY,
+    nombre VARCHAR2(80) NOT NULL,
+    id_rol NUMBER NOT NULL,
+    id_departamento NUMBER NOT NULL,
+    id_ubicacion NUMBER NOT NULL,
+    CONSTRAINT fk_usuarios_roles FOREIGN KEY (id_rol)
+        REFERENCES roles(id_rol),
+    CONSTRAINT fk_usuarios_departamentos FOREIGN KEY (id_departamento)
+        REFERENCES departamentos(id_departamento),
+    CONSTRAINT fk_usuarios_ubicaciones FOREIGN KEY (id_ubicacion)
+        REFERENCES ubicaciones(id_ubicacion)
+);
+
+CREATE TABLE prestamos (
+    id_prestamo NUMBER PRIMARY KEY,
+    id_usuario NUMBER NOT NULL,
+    id_articulo NUMBER NOT NULL,
+    fecha_prestamo DATE NOT NULL,
+    fecha_devolucion DATE,
+    cantidad NUMBER NOT NULL,
+    CONSTRAINT ck_prestamos_cantidad CHECK (cantidad > 0),
+    CONSTRAINT fk_prestamos_usuarios FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario),
+    CONSTRAINT fk_prestamos_articulos FOREIGN KEY (id_articulo)
+        REFERENCES articulos(id_articulo)
+);
+
+-- 5) VERIFICAR QUE EL ESQUEMA QUEDÓ LISTO
+SELECT table_name FROM user_tables ORDER BY table_name;
+
+-- ==========================================================
+-- CARGA DE DATOS INICIAL (INSERT)
+-- ==========================================================
+
+-- [INSERT 1] Cargar ROLES (tabla padre)
+INSERT INTO roles VALUES (1, 'Administrador');
+INSERT INTO roles VALUES (2, 'Bibliotecario');
+INSERT INTO roles VALUES (3, 'Usuario');
+
+-- [INSERT 2] Cargar DEPARTAMENTOS (tabla padre)
+INSERT INTO departamentos VALUES (10, 'Sistemas');
+INSERT INTO departamentos VALUES (20, 'Docencia');
+INSERT INTO departamentos VALUES (30, 'Administrativo');
+
+-- [INSERT 3] Cargar UBICACIONES (FK -> DEPARTAMENTOS)
+INSERT INTO ubicaciones VALUES (100, 'Bloque A', 10);
+INSERT INTO ubicaciones VALUES (101, 'Bloque B', 20);
+INSERT INTO ubicaciones VALUES (102, 'Bloque C', 30);
+
+-- [INSERT 4] Cargar CATEGORIAS y ARTICULOS
+INSERT INTO categorias VALUES (1, 'Equipos');
+INSERT INTO categorias VALUES (2, 'Accesorios');
+INSERT INTO articulos VALUES (1, 'Laptop HP 15', 1, 10);
+INSERT INTO articulos VALUES (2, 'Mouse Inalámbrico', 2, 25);
+INSERT INTO articulos VALUES (3, 'Teclado Mecánico', 2, 15);
+
+-- [INSERT 5] Cargar USUARIOS y PRESTAMOS
+INSERT INTO usuarios VALUES (10, 'Juan Pérez', 1, 10, 100);
+INSERT INTO usuarios VALUES (11, 'María López', 2, 20, 101);
+INSERT INTO usuarios VALUES (12, 'Carlos Ruiz', 3, 30, 102);
+
+INSERT INTO prestamos VALUES (100, 10, 1, SYSDATE, NULL, 1);
+INSERT INTO prestamos VALUES (101, 11, 2, SYSDATE, NULL, 3);
+INSERT INTO prestamos VALUES (102, 12, 3, SYSDATE, NULL, 2);
+
+-- Verificar carga completa
+SELECT u.nombre, p.id_prestamo, a.descripcion, p.cantidad
+FROM prestamos p
+JOIN usuarios u ON p.id_usuario = u.id_usuario
+JOIN articulos a ON p.id_articulo = a.id_articulo;
+
+-- [INSERT EXTRA - ERROR INTENCIONAL]
+-- Análisis: Oracle rechaza el INSERT porque id_usuario=99 no existe en USUARIOS.
+-- RESULTADO ESPERADO: ORA-02291: integrity constraint violated - parent key not found
+-- INSERT INTO prestamos VALUES (200, 99, 1, SYSDATE, NULL, 1);
+
+-- ==========================================================
+-- EJERCICIO 1: Nuevo Usuario VIP
+-- ==========================================================
+
+-- Paso 1: Insertar el usuario VIP (Pedro Sánchez)
+INSERT INTO usuarios (id_usuario, nombre, id_rol, id_departamento, id_ubicacion)
+VALUES (20, 'Pedro Sánchez', 2, 10, 100);
+
+-- Paso 2: Registrar el préstamo del artículo 1 (Laptop HP 15)
+INSERT INTO prestamos (id_prestamo, id_usuario, id_articulo, fecha_prestamo, fecha_devolucion, cantidad)
+VALUES (300, 20, 1, SYSDATE, NULL, 2);
+
+-- Paso 3: Verificación con JOIN
+SELECT u.nombre AS usuario, p.id_prestamo, a.descripcion, p.cantidad
+FROM usuarios u
+JOIN prestamos p ON u.id_usuario = p.id_usuario
+JOIN articulos a ON p.id_articulo = a.id_articulo
+WHERE u.id_usuario = 20;
+
+-- ==========================================================
+-- OPERACIONES DE ACTUALIZACIÓN (UPDATE)
+-- ==========================================================
+
+-- [UPDATE 1] Cambiar ubicación del usuario 10 (Patrón seguro: SELECT -> UPDATE -> SELECT)
+SELECT * FROM usuarios WHERE id_usuario = 10;
+UPDATE usuarios SET id_ubicacion = 101 WHERE id_usuario = 10;
+SELECT * FROM usuarios WHERE id_usuario = 10;
+
+-- [UPDATE 2] Ajustar stock tras inventario
+UPDATE articulos SET stock = 12 WHERE id_articulo = 1;
+
+-- [UPDATE 3] Registrar fecha de devolución
+UPDATE prestamos SET fecha_devolucion = SYSDATE WHERE id_prestamo = 100;
+
+-- [UPDATE 4] Modificar múltiples columnas
+UPDATE usuarios SET nombre = 'Juan Carlos Pérez', id_ubicacion = 102 WHERE id_usuario = 10;
+
+-- [UPDATE 5] Ajustar cantidad sumando a la actual
+UPDATE prestamos SET cantidad = cantidad + 1 WHERE id_usuario = 11;
+
+-- [UPDATE ERROR INTENCIONAL]
+-- Análisis: La restricción CHECK impide valores negativos.
+-- RESULTADO ESPERADO: ORA-02290: check constraint violated
+-- UPDATE prestamos SET cantidad = -50 WHERE id_prestamo = 101;
+
+-- ==========================================================
+-- EJERCICIO 2: Actualización por Departamento
+-- ==========================================================
+
+-- Verificar usuarios de Docencia (id 20)
+SELECT * FROM usuarios WHERE id_departamento = 20;
+
+-- UPDATE 1: Migrar usuarios de Docencia al Bloque C (id 102)
+UPDATE usuarios SET id_ubicacion = 102 WHERE id_departamento = 20;
+-- Nota: Afecta a todas las filas donde id_departamento = 20.
+
+-- Verificar préstamos menores a 2 unidades
+SELECT * FROM prestamos WHERE cantidad < 2;
+
+-- UPDATE 2: Incrementar préstamos pequeños
+UPDATE prestamos SET cantidad = cantidad + 1 WHERE cantidad < 2;
+
+-- Verificar resultado final de préstamos
+SELECT * FROM prestamos ORDER BY id_prestamo;
+
+-- ==========================================================
+-- OPERACIONES DE ELIMINACIÓN (DELETE)
+-- ==========================================================
+
+-- Estado previo al borrado
+SELECT 'USUARIOS' tab, COUNT(*) n FROM usuarios
+UNION ALL SELECT 'PRESTAMOS', COUNT(*) FROM prestamos
+UNION ALL SELECT 'ARTICULOS', COUNT(*) FROM articulos;
+
+-- [DELETE 1 y 2] Eliminar préstamos específicos
+DELETE FROM prestamos WHERE id_prestamo = 102;
+
+-- [DELETE 3] ERROR INTENCIONAL: Borrar padre con hijos activos
+-- RESULTADO ESPERADO: ORA-02292: integrity constraint violated - child record found
+-- DELETE FROM usuarios WHERE id_usuario = 11;
+
+-- [DELETE 4] Eliminar hijos primero para poder borrar al padre
+DELETE FROM prestamos WHERE id_usuario = 11;
+
+-- [DELETE 5] Ahora sí se elimina el usuario 11
+DELETE FROM usuarios WHERE id_usuario = 11;
+
+-- ==========================================================
+-- EJERCICIO 3: Baja Completa de Usuario VIP (Pedro Sánchez - ID 20)
+-- ==========================================================
+
+-- Paso 0: Identificar registros relacionados
+SELECT * FROM usuarios WHERE id_usuario = 20;
+SELECT * FROM prestamos WHERE id_usuario = 20;
+
+-- Paso 1: Intento fallido (evidencia de restricción)
+-- DELETE FROM usuarios WHERE id_usuario = 20; -- Lanzará ORA-02292
+
+-- Paso 2: Eliminar primero los registros dependientes (Préstamos)
+DELETE FROM prestamos WHERE id_usuario = 20;
+
+-- Paso 3: Eliminar el artículo si ya no se desea rastrear (según la planificación)
+DELETE FROM articulos WHERE id_articulo = 1;
+
+-- Paso 4: Eliminar el USUARIO 20 finalmente
+DELETE FROM usuarios WHERE id_usuario = 20;
+
+-- Paso 5: Verificar eliminación
+SELECT * FROM usuarios WHERE id_usuario = 20;
+SELECT * FROM prestamos WHERE id_usuario = 20;
+
+-- Paso 6: Confirmar todos los cambios en la base de datos
+COMMIT;
+planificacion_clase_dml.sql
+Mostrando planificacion_clase_dml.sql.
